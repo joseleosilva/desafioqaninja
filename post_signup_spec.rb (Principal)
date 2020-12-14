@@ -1,0 +1,62 @@
+require_relative "routes/signup"
+require_relative "libs/mongo"
+
+
+
+describe "POST /signup" do
+  context "Cenarios de Signup" do
+    before (:all) do
+      payload = { name: "Sanka", email: "scs@gmail.com", password: "scsleo86" }
+      MongoDB.new.remove_user(payload[:email])
+      @result = Signup.new.create(payload)
+    end
+
+    it "valida status code" do
+      expect(@result.code).to eql 200
+    end
+
+    it "valida id do usuario" do
+      expect(@result.parsed_response["_id"].length).to eql 24
+    end
+  end
+end
+
+examples = [
+  {
+    title: "nome obrigatorio",
+    payload: { name: "", email: "scs@gmail.com", password: "scsleo86" },
+    code: 412,
+    error: "required name",
+  },
+  {
+    title: "email obrigatorio",
+    payload: { name: "Sanka", email: "", password: "scsleo86" },
+    code: 412,
+    error: "required email",
+  },
+  {
+    title: "password obrigatorio",
+    payload: { name: "Sanka", email: "scs@gmail.com", password: "" },
+    code: 412,
+    error: "required password",
+  },
+
+]
+
+puts examples.to_json
+
+examples.each do |e|
+  context "#{e[:title]}" do
+    before (:all) do
+      @result = Signup.new.create(e[:payload])
+    end
+
+    it "code #{e[:code]}" do
+      expect(@result.code).to eql e[:code]
+    end
+
+    it "#{e[:error]}" do
+      expect(@result.parsed_response["error"]).to eql e[:error]
+    end
+  end
+end
